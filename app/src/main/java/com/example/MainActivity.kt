@@ -16,6 +16,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
@@ -34,6 +36,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
@@ -181,7 +184,8 @@ fun MoonifyApp(modifier: Modifier = Modifier) {
                     selectedDate = selectedDate,
                     onLogRequest = { cmd, out -> appendLog(cmd, out) },
                     isLandscape = true,
-                    modifier = Modifier.weight(1.1f)
+                    modifier = Modifier.weight(1.1f),
+                    onDateSelected = { date -> selectedDate = date }
                 )
 
                 CalendarCard(
@@ -209,28 +213,19 @@ fun MoonifyApp(modifier: Modifier = Modifier) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    BentoGridLayout(
-                        moonInfo = selectedMoonInfo,
-                        selectedDate = selectedDate,
-                        onLogRequest = { cmd, out -> appendLog(cmd, out) },
-                        isLandscape = false,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                BentoGridLayout(
+                    moonInfo = selectedMoonInfo,
+                    selectedDate = selectedDate,
+                    onLogRequest = { cmd, out -> appendLog(cmd, out) },
+                    isLandscape = false,
+                    modifier = Modifier.fillMaxWidth(),
+                    onDateSelected = { date -> selectedDate = date }
+                )
 
                 CalendarCard(
                     currentMonth = currentMonth,
@@ -263,471 +258,191 @@ fun BentoGridLayout(
     selectedDate: LocalDate,
     onLogRequest: (String, String) -> Unit,
     modifier: Modifier = Modifier,
-    isLandscape: Boolean = false
+    isLandscape: Boolean = false,
+    onDateSelected: (LocalDate) -> Unit = {}
 ) {
-    if (isLandscape) {
-        Row(
-            modifier = modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-            verticalAlignment = Alignment.CenterVertically
+    val nextFullMoonDate = selectedDate.plusDays(moonInfo.nextFullMoonDays.toLong())
+    val nextNewMoonDate = selectedDate.plusDays(moonInfo.nextNewMoonDays.toLong())
+    val nextFullStr = nextFullMoonDate.format(DateTimeFormatter.ofPattern("MMM d", Locale.US))
+    val nextNewStr = nextNewMoonDate.format(DateTimeFormatter.ofPattern("MMM d", Locale.US))
+
+    Card(
+        modifier = modifier
+            .testTag("info_card")
+            .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MochaSurface0)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(if (isLandscape) 16.dp else 24.dp)
         ) {
-            // Card 1: Main Large Bento Card (scaled down slightly for landscape)
-            Card(
+            // Transparent, shadow-free, glow-free box containing large emoji
+            Box(
                 modifier = Modifier
-                    .weight(1.1f)
-                    .fillMaxHeight()
-                    .testTag("info_card")
-                    .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MochaSurface0)
+                    .align(Alignment.TopEnd)
+                    .size(if (isLandscape) 44.dp else 52.dp)
+                    .background(Color.Transparent),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = moonInfo.phaseName,
-                                color = MochaMauve,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontStyle = FontStyle.Italic,
-                                fontFamily = FontFamily.SansSerif,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Illum: ${String.format("%.1f %%", moonInfo.illumination * 100)}",
-                                color = MochaText.copy(alpha = 0.8f),
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.SansSerif
-                            )
-                        }
-
-                        // Interactive/Glowing Moon Emoji
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(MochaBase, CircleShape)
-                                .border(1.dp, MochaSurface1, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = moonInfo.emoji,
-                                fontSize = 28.sp,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Retro progress bar
-                    RetroProgressBar(
-                        progress = moonInfo.illumination.toFloat(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                Text(
+                    text = moonInfo.emoji,
+                    fontSize = if (isLandscape) 32.sp else 40.sp,
+                    textAlign = TextAlign.Center
+                )
             }
 
-            // Right side column of mini Bento boxes
             Column(
-                modifier = Modifier
-                    .weight(1.2f)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(if (isLandscape) 10.dp else 16.dp)
             ) {
-                // Row 1: Lunar Age & Cycle Progress
-                Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp)),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MochaSurface0)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "LUNAR AGE",
-                                color = MochaSubtext0,
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif
-                            )
-                            Text(
-                                text = String.format("%.2f d", moonInfo.age),
-                                color = MochaText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp)),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MochaSurface0)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "CYCLE PROGRESS",
-                                color = MochaSubtext0,
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif
-                            )
-                            Text(
-                                text = String.format("%.1f %%", moonInfo.progress * 100),
-                                color = MochaText,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-                }
-
-                // Row 2: Next Full Moon & Next New Moon
-                val nextFullMoonDate = selectedDate.plusDays(moonInfo.nextFullMoonDays.toLong())
-                val nextNewMoonDate = selectedDate.plusDays(moonInfo.nextNewMoonDays.toLong())
-                val nextFullStr = nextFullMoonDate.format(DateTimeFormatter.ofPattern("MMM d"))
-                val nextNewStr = nextNewMoonDate.format(DateTimeFormatter.ofPattern("MMM d"))
-
-                Row(
-                    modifier = Modifier.weight(1.1f),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp))
-                            .clickable {
-                                onLogRequest("query --full-moon", "Projecting date to next Full Moon: $nextFullMoonDate")
-                            },
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MochaSurface0)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "NEXT FULL MOON",
-                                color = MochaLavender,
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif
-                            )
-                            Text(
-                                text = nextFullStr,
-                                color = MochaText,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp))
-                            .clickable {
-                                onLogRequest("query --new-moon", "Projecting date to next New Moon: $nextNewMoonDate")
-                            },
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MochaSurface0)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "NEXT NEW MOON",
-                                color = MochaLavender,
-                                fontSize = 8.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.SansSerif
-                            )
-                            Text(
-                                text = nextNewStr,
-                                color = MochaText,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        Column(
-            modifier = modifier
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Card 1: Main Large Bento Card (Spans full width)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("info_card")
-                    .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MochaSurface0)
-            ) {
+                // Header (Phase Name & Date)
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = moonInfo.phaseName,
-                                color = MochaMauve,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontStyle = FontStyle.Italic,
-                                fontFamily = FontFamily.SansSerif,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Illumination: ${String.format("%.1f %%", moonInfo.illumination * 100)}",
-                                color = MochaText.copy(alpha = 0.8f),
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.SansSerif
-                            )
-                        }
+                    // Phase Name
+                    Text(
+                        text = moonInfo.phaseName,
+                        color = MochaMauve,
+                        fontSize = if (isLandscape) 18.sp else 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.SansSerif
+                    )
 
-                        // Interactive/Glowing Moon Emoji
-                        Box(
-                            modifier = Modifier
-                                .size(52.dp)
-                                .background(MochaBase, CircleShape)
-                                .border(1.dp, MochaSurface1, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            // Ambient glowing shadow effect
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .graphicsLayer {
-                                        scaleX = 1.15f
-                                        scaleY = 1.15f
-                                    }
-                                    .shadow(
-                                        elevation = 14.dp,
-                                        shape = CircleShape,
-                                        spotColor = MochaMauve,
-                                        ambientColor = MochaMauve
-                                    )
-                            )
-                            
-                            Text(
-                                text = moonInfo.emoji,
-                                fontSize = 32.sp,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    // Beautiful custom Retro progress bar embedded in Bento
-                    RetroProgressBar(
-                        progress = moonInfo.illumination.toFloat(),
-                        modifier = Modifier.fillMaxWidth()
+                    // Selected formatted Date: e.g., Wednesday, May 20, 2026
+                    Text(
+                        text = moonInfo.dateString,
+                        color = MochaSubtext0,
+                        fontSize = if (isLandscape) 13.sp else 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.SansSerif
                     )
                 }
-            }
 
-            // Row of 2 Bento mini-cards: Age & Cycle Progress
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Mini Card Left: Lunar Age
-                Card(
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp)),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MochaSurface0)
+                // Compress detail rows to take up less vertical space
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(if (isLandscape) 4.dp else 8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    // Detail rows matching the image layout
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "LUNAR AGE",
+                            text = "Illumination: ",
                             color = MochaSubtext0,
-                            fontSize = 8.sp,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
+                            fontFamily = FontFamily.SansSerif
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = String.format(Locale.US, "%.1f%%", moonInfo.illumination * 100),
+                            color = MochaYellow,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.SansSerif
                         )
-                        Text(
-                            text = String.format("%.2f d", moonInfo.age),
-                            color = MochaText,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
                     }
-                }
 
-                // Mini Card Right: Cycle Progress
-                Card(
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp)),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MochaSurface0)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "CYCLE PROGRESS",
+                            text = "Moon Age: ",
                             color = MochaSubtext0,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
                             fontFamily = FontFamily.SansSerif
                         )
+                        Spacer(modifier = Modifier.weight(1f))
                         Text(
-                            text = String.format("%.1f %%", moonInfo.progress * 100),
-                            color = MochaText,
-                            fontSize = 14.sp,
+                            text = String.format(Locale.US, "%.1f days", moonInfo.age),
+                            color = MochaGreen,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.SansSerif
                         )
                     }
-                }
-            }
 
-            // Row of 2 Bento clickable upcoming event cards (Next Full / Next New moons)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                val nextFullMoonDate = selectedDate.plusDays(moonInfo.nextFullMoonDays.toLong())
-                val nextNewMoonDate = selectedDate.plusDays(moonInfo.nextNewMoonDays.toLong())
-                val nextFullStr = nextFullMoonDate.format(DateTimeFormatter.ofPattern("MMM d"))
-                val nextNewStr = nextNewMoonDate.format(DateTimeFormatter.ofPattern("MMM d"))
-
-                // Clickable Bento column for Next Full Moon
-                Card(
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp))
-                        .clickable {
-                            onLogRequest("query --full-moon", "Projecting date to next Full Moon: $nextFullMoonDate")
-                        },
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MochaSurface0)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "NEXT FULL MOON",
-                            color = MochaLavender,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = "Cycle Progress: ",
+                            color = MochaSubtext0,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
                             fontFamily = FontFamily.SansSerif
                         )
+                        Spacer(modifier = Modifier.weight(1f))
                         Text(
-                            text = "$nextFullStr",
-                            color = MochaText,
-                            fontSize = 13.sp,
+                            text = String.format(Locale.US, "%.1f%%", moonInfo.progress * 100),
+                            color = MochaBlue,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.SansSerif
                         )
                     }
-                }
 
-                // Clickable Bento column for Next New Moon
-                Card(
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .border(width = 1.dp, color = MochaSurface1, shape = RoundedCornerShape(24.dp))
-                        .clickable {
-                            onLogRequest("query --new-moon", "Projecting date to next New Moon: $nextNewMoonDate")
-                        },
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MochaSurface0)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "NEXT NEW MOON",
-                            color = MochaLavender,
-                            fontSize = 8.sp,
+                            text = "Trend: ",
+                            color = MochaSubtext0,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
+                            fontFamily = FontFamily.SansSerif
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = moonInfo.trend,
+                            color = MochaRed,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.SansSerif
                         )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = "$nextNewStr",
-                            color = MochaText,
-                            fontSize = 13.sp,
+                            text = "Next Full Moon: ",
+                            color = MochaSubtext0,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
+                            fontFamily = FontFamily.SansSerif
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = nextFullStr,
+                            color = MochaYellow,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
+                            fontFamily = FontFamily.SansSerif
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Next New Moon: ",
+                            color = MochaSubtext0,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
+                            fontFamily = FontFamily.SansSerif
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = nextNewStr,
+                            color = MochaLavender,
+                            fontSize = if (isLandscape) 12.sp else 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.SansSerif
                         )
                     }
                 }
@@ -755,8 +470,9 @@ fun CalendarCard(
         colors = CardDefaults.cardColors(containerColor = MochaMantle)
     ) {
         Column(
-            modifier = Modifier.padding(if (isLandscape) 12.dp else 20.dp),
-            verticalArrangement = Arrangement.spacedBy(if (isLandscape) 6.dp else 10.dp)
+            modifier = Modifier
+                .padding(if (isLandscape) 10.dp else 16.dp),
+            verticalArrangement = Arrangement.spacedBy(if (isLandscape) 4.dp else 8.dp)
         ) {
             // Month navigators styled clean style
             Row(
@@ -775,7 +491,7 @@ fun CalendarCard(
                     Text(
                         text = "◀",
                         color = MochaLavender,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp
                     )
@@ -786,13 +502,13 @@ fun CalendarCard(
                     color = MochaText,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
-                    fontSize = 16.sp,
+                    fontSize = 14.sp,
                     textAlign = TextAlign.Center,
                     letterSpacing = 0.5.sp,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .clickable { onTitleClick() }
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
                 )
 
                 Box(
@@ -806,7 +522,7 @@ fun CalendarCard(
                     Text(
                         text = "▶",
                         color = MochaLavender,
-                        fontFamily = FontFamily.Monospace,
+                        fontFamily = FontFamily.SansSerif,
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp
                     )
@@ -825,8 +541,8 @@ fun CalendarCard(
                         color = MochaSubtext0,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.SansSerif,
-                        fontSize = if (isLandscape) 8.sp else 10.sp,
-                        modifier = Modifier.width(if (isLandscape) 28.dp else 32.dp),
+                        fontSize = if (isLandscape) 9.sp else 11.sp,
+                        modifier = Modifier.width(if (isLandscape) 30.dp else 36.dp),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -842,7 +558,7 @@ fun CalendarCard(
             val rowsEstimate = (totalCellsCount + 6) / 7
 
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 for (rowIndex in 0 until rowsEstimate) {
                     Row(
@@ -873,13 +589,13 @@ fun CalendarCard(
                                 // Background celestial tiny star element for spacing
                                 Box(
                                     modifier = Modifier
-                                        .size(if (isLandscape) 28.dp else 34.dp, if (isLandscape) 38.dp else 46.dp),
+                                        .size(if (isLandscape) 30.dp else 36.dp, if (isLandscape) 36.dp else 46.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = "·",
                                         color = MochaOverlay0.copy(alpha = 0.25f),
-                                        fontFamily = FontFamily.Monospace,
+                                        fontFamily = FontFamily.SansSerif,
                                         fontSize = if (isLandscape) 9.sp else 11.sp
                                     )
                                 }
@@ -901,25 +617,28 @@ fun CalendarDayCell(
     isLandscape: Boolean = false,
     onClick: () -> Unit
 ) {
-    val scale = remember { Animatable(1f) }
-    
-    // Spring feedback animation on tap
-    LaunchedEffect(isSelected) {
-        if (isSelected) {
-            scale.animateTo(
-                targetValue = 1.15f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioHighBouncy)
-            )
-            scale.animateTo(1.0f)
-        }
-    }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = when {
+            isPressed -> 0.94f
+            isSelected -> 1.15f
+            else -> 1.0f
+        },
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "cell_scale"
+    )
 
     Box(
         modifier = Modifier
-            .size(if (isLandscape) 28.dp else 34.dp, if (isLandscape) 38.dp else 46.dp)
+            .size(if (isLandscape) 30.dp else 36.dp, if (isLandscape) 36.dp else 46.dp)
             .graphicsLayer {
-                scaleX = scale.value
-                scaleY = scale.value
+                scaleX = scale
+                scaleY = scale
             }
             .clip(RoundedCornerShape(if (isLandscape) 6.dp else 8.dp))
             .background(
@@ -929,36 +648,18 @@ fun CalendarDayCell(
                     else -> Color.Transparent
                 }
             )
-            .border(
-                1.dp,
-                when {
-                    isSelected -> Color.Transparent
-                    isToday -> MochaLavender
-                    else -> Color.Transparent
-                },
-                RoundedCornerShape(if (isLandscape) 6.dp else 8.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null, // Disable default indie bounds to match our custom spring animation perfectly
+                onClick = onClick
             )
-            .clickable { onClick() }
-            .testTag("day_cell_$dayNumber")
-            .let { modifier ->
-                // Implements glowing shadow for active selected card as specified
-                if (isSelected) {
-                    modifier.shadow(
-                        elevation = if (isLandscape) 4.dp else 8.dp,
-                        shape = RoundedCornerShape(if (isLandscape) 6.dp else 8.dp),
-                        spotColor = MochaMauve,
-                        ambientColor = MochaMauve
-                    )
-                } else {
-                    modifier
-                }
-            },
+            .testTag("day_cell_$dayNumber"),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(bottom = 6.dp)
+            modifier = Modifier.padding(bottom = 6.dp) // Added more bottom padding as requested
         ) {
             Text(
                 text = dayNumber.toString(),
@@ -967,7 +668,7 @@ fun CalendarDayCell(
                     isToday -> MochaLavender
                     else -> MochaText
                 },
-                fontFamily = FontFamily.Monospace,
+                fontFamily = FontFamily.SansSerif,
                 fontSize = if (isLandscape) 10.sp else 12.sp,
                 fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal
             )
