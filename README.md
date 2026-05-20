@@ -12,7 +12,7 @@ This is an Android fork of [Moonify CLI](https://github.com/ESHAYAT102/moonify).
 To install and run the app on your Android device:
 
 1. **Download the APK**: Click the direct link below to download the compiled package:
-   👉 **[Download APK](.build-outputs/app-debug.apk)**
+   👉 **<a href="https://github.com/ESHAYAT102/moonify-android/raw/refs/heads/main/.build-outputs/app-debug.apk" download>Download APK</a>**
 2. **Transfer and Install**: Open the downloaded `.apk` file on your Android device. 
 3. **Allow Unknown Sources**: If prompted, allow your browser or file manager permission to install applications from unknown sources.
 4. **Scan**: If prompted to scan the file, you can either scan or click 'more info' and skip scan.
