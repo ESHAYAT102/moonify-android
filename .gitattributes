@@ -1,0 +1,4 @@
+# Mark gradle wrapper jar as binary to prevent Git from converting line endings and corrupting it
+*.jar binary
+gradlew text eol=lf
+gradlew.bat text eol=crlf
