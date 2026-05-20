@@ -1,21 +1,19 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Moonify Android 🌙
 
-# Run and deploy your AI Studio app
+This is an Android fork of [Moonify CLI](https://github.com/ESHAYAT102/moonify). It brings all the detailed lunar phase modeling, calculations, and progress tracking onto a beautiful, mobile-friendly touch interface styled in the cozy Catppuccin Mocha theme.
 
-This contains everything you need to run your app locally.
+## Features
+- **Accurate Lunar Physics**: Real-time moon stage, illumination levels, cycle progress, and age metrics.
+- **Visual Monthly Calendar**: Interactive month grid where you can tap days to see historical or projected moon info instantly.
+- **Sleek Aesthetic**: Fully built using **Jetpack Compose** and designed with the gorgeous Catppuccin Mocha palette.
 
-View your app in AI Studio: https://ai.studio/apps/8b19b5fa-347a-43bb-92d8-d9c3fdcd96bd
+## Installation Guide
 
-## Run Locally
+To install and run the app on your Android device:
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
-
-
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+1. **Download the APK**: Click the direct link below to download the compiled package:
+   👉 **[Download app-debug.apk (.build-outputs/app-debug.apk)](.build-outputs/app-debug.apk)**
+2. **Transfer and Install**: Open the downloaded `.apk` file on your Android device. 
+3. **Allow Unknown Sources**: If prompted, allow your browser or file manager permission to install applications from unknown sources.
+4. **Scan**: If prompted to scan the file, you can either scan or click 'more info' and skip scan.
+5. **Enjoy**: Launch **Moonify** and start tracking the moon!
