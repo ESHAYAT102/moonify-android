@@ -15,5 +15,5 @@ To install and run the app on your Android device:
    👉 **<a href="https://github.com/ESHAYAT102/moonify-android/raw/refs/heads/main/.build-outputs/app-debug.apk" download>Download APK</a>**
 2. **Transfer and Install**: Open the downloaded `.apk` file on your Android device. 
 3. **Allow Unknown Sources**: If prompted, allow your browser or file manager permission to install applications from unknown sources.
-4. **Scan**: If prompted to scan the file, you can either scan or click 'more info' and skip scan.
+4. **Scan**: If prompted to scan the file, you can either scan or click 'more details' and skip scan.
 5. **Enjoy**: Launch **Moonify** and start tracking the moon!
