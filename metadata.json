@@ -1,0 +1,6 @@
+{
+  "name": "Moonify",
+  "description": "Terminal-style Moon Phase Calendar featuring Catppuccin Mocha Mauve styling, interactive navigation, and accurate astronomical estimations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
