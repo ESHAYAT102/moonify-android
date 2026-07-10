@@ -12,7 +12,7 @@ android {
 
   defaultConfig {
     applicationId = "com.aistudio.moonifylunar.hzqwtx"
-    minSdk = 23
+    minSdk = 21
     targetSdk = 34
     versionCode = 1
     versionName = "1.0"
@@ -46,7 +46,7 @@ android {
       signingConfig = signingConfigs.getByName("release")
     }
     debug {
-      isMinifyEnabled = true
+      isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("debug")
     }
