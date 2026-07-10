@@ -38,6 +38,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -465,7 +467,26 @@ fun CalendarCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("calendar_card")
-            .border(1.dp, MochaSurface0, RoundedCornerShape(24.dp)),
+            .border(1.dp, MochaSurface0, RoundedCornerShape(24.dp))
+            .pointerInput(currentMonth) {
+                var totalDrag = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { totalDrag = 0f },
+                    onDragEnd = {
+                        if (totalDrag > 100f) {
+                            // Swiped right -> Previous Month (◀)
+                            onMonthChanged(currentMonth.minusMonths(1))
+                        } else if (totalDrag < -100f) {
+                            // Swiped left -> Next Month (▶)
+                            onMonthChanged(currentMonth.plusMonths(1))
+                        }
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consume()
+                        totalDrag += dragAmount
+                    }
+                )
+            },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MochaMantle)
     ) {
