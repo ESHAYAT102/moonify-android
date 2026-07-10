@@ -12,7 +12,7 @@ android {
 
   defaultConfig {
     applicationId = "com.aistudio.moonifylunar.hzqwtx"
-    minSdk = 24
+    minSdk = 23
     targetSdk = 34
     versionCode = 1
     versionName = "1.0"
@@ -60,6 +60,11 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
+  packaging {
+    jniLibs {
+      useLegacyPackaging = true
+    }
+  }
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
